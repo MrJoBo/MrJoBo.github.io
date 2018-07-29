@@ -6,10 +6,12 @@
 <body style="background-color:powderblue;">
 	<p style="text-align:center;">	The following is an exploratory visualization of vehicle fuel economy and emissions data collected by the EPA since 1984. <br>
 	The project is an adaption of my midterm Tableau Dashboard which can be accessed <a href="https://public.tableau.com/profile/joseph.bowe#!/vizhome/Bowe-FuelEconomyVisualization-1/Dashboard">here.</a> <br>
-	The project is arrange in an "interactive slideshow" format of three slides with drill-down capability <br>
+	The project is arrange in an "interactive slideshow" format of three slides with drill-down capability. <br>
+	Annotations, triggers, and parameters are utilized throughout the visualization. All code is written in basic html, JavaScript, and CSS. <br>
+	Please enjoy, and I would love to get meaningful feedback. I found D3 to be very challenging, so I am sure there is room for improvement in nearly every aspect of every scene. 
 </p>
 <p style="text-align:center;">
-	This first scene addresses the proliferation of different fuel types in a drill-down format. <br> 
+	The first scene addresses the proliferation of different fuel types in a drill-down format. <br> 
 	The user is presented with a treemap that depicts the market share of each of the most common fuel types. <br> 
 	From that level, the user can select the fuel type they would like to learn more about to see the manufacturers of vehicles of the selected fuel type by market share. <br>
 	Upon selecting a manufacturer tile, the user will see the classes of vehicle that make up the manufacturer's fuel types. <br>
@@ -19,12 +21,27 @@
 	Finally, the user is presented with the fuel economy data in Miles per Gallon. <br>
 </p>
 <p style="text-align:center;">
-	The scene makes effective use of highlighting the segment in which the mouse is placed. This acts as an <font font size="+2"> annotation</font> mechanism <br>
+	This scene highlights the segment in which the mouse is placed. This acts as an <font font size="+2"> annotation</font> mechanism <br>
 	in as much as it allows the user to focus on the fuel type of interest. The  <font size="+2">parameter</font> in this scene is fuel type. <br>
 	Clicking on a block <font size="+2">triggers</font> the scene to change and present the data the next level down. <br>
 	<font size="+2">Transitions</font> are also used when the user clicks into the data to smooth the presentation of the next layer down. <br>
 	The bar at the top of the chart allows the viewer to keep track of where they are in the tree and navigate back to the next higher level. 
+</p>
 
+<p style="text-align:center;">
+	The second scene displays average fuel economy by manufacturer. <br>
+    The colors act as <font size="+2"> annotations</font> which indicate the manufacturers relative performance against its peers. <br>
+    Green indicates a positive metric, orange is neutral, and red is reserved for the worst performing manufacturers. <br>
+    Placing the mouse over any of the bars <font size="+2">triggers</font> a tooltip which provides the user with even more data about the manufacturer such as <br>
+    Avg CO2 emissions, Avg Fuel Economy, and Avg engine displacement. This scene is passive, and <font size="+2">parameters</font> are controlled only by the buttons at the bottom. 
+</p>
+
+<p style="text-align:center;">
+	The third and final scene displays CO2 emissions, fuel economy, and engine displacement across the measurement period (1984 - 2019). <br>
+    The chart is zoom-able, allowing the user to really drill down into the data. <br>
+    <font size="+2">Annotations</font> are provided in the form of the legend boxes on the side of the chart. <br>
+    The zoom <font size="+2">parameter</font> controls the period displayed of each metric, and adjusting this <font size="+2">triggers</font> the axes. <br>
+    The buttons at the bottom return the viewer to the first scene or the previous scene. 
 </p>
 <a href="index.html"><button>Return to Visualization</button></a>
 </body>
