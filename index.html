@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Bowe3 Data Visualization</title>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<script src="http://d3js.org/d3.v2.js"></script>
+<script src="http://code.jquery.com/jquery-1.7.1.js"></script>
+<body style="background-color:powderblue;"></body>
+<a href="about.html"><button>About the Visualization</button></a>
+<p style="text-align:center;"> 	The following is an exploratory visualization of vehicle fuel economy and emissions data collected by the EPA since 1984. <br>
+	The project is an adaption of my midterm Tableau Dashboard which can be accessed <a href="https://public.tableau.com/profile/joseph.bowe#!/vizhome/Bowe-FuelEconomyVisualization-1/Dashboard">here.</a> <br>
+	The project is arrange in an "interactive slideshow" format of three slides with drill-down capability <br>
+</p>
+<p id="chart">
+	<p id="rawdata">
+		<div>
+			<p style="text-align:center;"></p>
+			<p style="text-align:center;">
+				<a href="barchart.html"><button>Next Visualization</button></a>
+			</p>
+		</div>
+		<p id="svg2">
+			<p id="svg2"></p>
+			<script>
+				function reSortRoot(root,value_key) {
+		
+		for (var key in root) {
+			if (key == "key") {
+				root.name = root.key;
+				delete root.key;
+			}
+			if (key == "values") {
+				root.children = [];
+				for (item in root.values) {
+					root.children.push(reSortRoot(root.values[item],value_key));
+				}
+				delete root.values;
+			}
+			if (key == value_key) {
+				root.value = parseFloat(root[value_key]);
+				delete root[value_key];
+			}
+		}
+		return root;
+	}
+
+	$( document ).ready(function() {
+		
+
+
+
+
+		d3.csv("vehicles.csv", function(csv_data){
+			
+			var nested_data = d3.nest()
+			.key(function(d)  { return d.fuelType; })
+			.key(function(d)  { return d.make; })
+			.key(function(d)  { return d.VClass; })
+			.key(function(d)  { return d.year; })
+			.key(function(d)  { return d.model; })
+			.key(function(d)  { return d.trany; })
+			.key(function(d)  { return d.comb08 + " mpg"; })               
+			.entries(csv_data);
+			
+			
+			var root = {};				
+			root.key = "Fuel Type Prevalance";
+			root.values = nested_data;				
+			root = reSortRoot(root,"co2TailpipeGpm");						
+			loadData(root);
+
+			
+		});
+
+	});
+	var margin = {top: 20, right: 0, bottom: 0, left: 0},
+	width = 820,
+	height = 700 - margin.top - margin.bottom,
+	formatNumber = d3.format(".2s"),
+	transitioning;
+
+
+	var x = d3.scale.linear()
+	.domain([0, width])
+	.range([0, width]);
+
+	var y = d3.scale.linear()
+	.domain([0, height])
+	.range([0, height]);
+
+	var treemap = d3.layout.treemap()
+	.children(function(d, depth) { return depth ? null : d.children; })
+	.sort(function(a, b) { return a.value - b.value; })
+	.ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
+	.round(false);
+
+	
+	var svg = d3.select("#chart").append("svg")
+	.attr("width", width + margin.left + margin.right)
+	.attr("height", height + margin.bottom + margin.top)
+	.style("margin-left", -margin.left + "px")
+	.style("margin.right", -margin.right + "px")
+	.append("g")
+	.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+	.style("shape-rendering", "crispEdges");
+
+	var color = d3.scale.category20c();
+
+	var grandparent = svg.append("g")
+	.attr("class", "grandparent");
+
+	grandparent.append("rect")
+	.attr("y", -margin.top)
+	.attr("width", width)
+	.attr("height", margin.top);
+
+	grandparent.append("text")
+	.attr("x", 6)
+	.attr("y", 6 - margin.top)
+	.attr("dy", ".75em");
+
+	function initialize(root) {
+		root.x = root.y = 0;
+		root.dx = width;
+		root.dy = height;
+		root.depth = 0;
+	}
+
+
+	function accumulate(d) {
+		return d.children
+		? d.value = d.children.reduce(function(p, v) { return p + accumulate(v); }, 0)
+		: d.value;
+	}
+
+
+	function layout(d) {
+		if (d.children) {
+			treemap.nodes({children: d.children});
+			d.children.forEach(function(c) {
+				c.x = d.x + c.x * d.dx;
+				c.y = d.y + c.y * d.dy;
+				c.dx *= d.dx;
+				c.dy *= d.dy;
+				c.parent = d;
+				layout(c);
+			});
+		}
+	}
+
+
+	function display(d) {
+
+		grandparent
+		.datum(d.parent)
+		.on("click", transition)
+		.select("text")
+		.text(name(d));
+
+		var g1 = svg.insert("g", ".grandparent")
+		.datum(d)
+		.attr("class", "depth");
+
+		var g = g1.selectAll("g")
+		.data(d.children)
+		.enter().append("g");
+		
+		g.filter(function(d) { return d.children; })
+		.classed("children", true)
+		.on("click", transition);
+		
+		g.selectAll(".child")
+		.data(function(d) { return d.children || [d]; })
+		.enter().append("rect")
+		.attr("class", "child")
+		.call(rect)
+		.append("title")
+		.text(function(d) { return d.name + " " + formatNumber(d.size); });
+
+
+		g.append("rect")
+		.attr("class", "parent")
+		.call(rect)
+		
+		.on("click", function(d) { 
+			if(!d.children){
+				window.open(d.url); 
+			}
+		})
+		.append("title")
+		.text(function(d) { return d.name + " " + formatNumber(d.size); }); 
+
+
+		g.append("foreignObject")
+		.call(rect)
+		
+		.on("click", function(d) { 
+			if(!d.children){
+				window.open(d.url); 
+			}
+		})
+		.attr("class","foreignobj")
+		.append("xhtml:div") 
+		.attr("dy", ".75em")
+		.html(function(d) { 
+			if (d.size) {
+				return d.name + " (" + formatNumber(d.size) + ")"; 
+			} 
+			if (d.value > 0 && typeof(d.value) !== "undefined") {
+				return d.name + " (" + formatNumber(d.value) + ")"; 
+			}
+			return d.name;
+		})
+		.attr("class","textdiv"); 
+		function transition(d) {
+			if (transitioning || !d) return;
+			transitioning = true;
+			var g2 = display(d),
+			t1 = g1.transition().duration(1000),
+			t2 = g2.transition().duration(1000);
+			
+			x.domain([d.x, d.x + d.dx]);
+			y.domain([d.y, d.y + d.dy]);
+			
+			svg.style("shape-rendering", null);
+
+
+			svg.selectAll(".depth").sort(function(a, b) { return a.depth - b.depth; });
+
+			g2.selectAll("text").style("fill-opacity", 0);
+			g2.selectAll("foreignObject div").style("display", "none"); 
+
+
+			t1.selectAll("text").call(text).style("fill-opacity", 0);
+			t2.selectAll("text").call(text).style("fill-opacity", 1);
+			t1.selectAll("rect").call(rect);
+			t2.selectAll("rect").call(rect);
+
+			t1.selectAll(".textdiv").style("display", "none"); 
+			t1.selectAll(".foreignobj").call(foreign); 
+			t2.selectAll(".textdiv").style("display", "block"); 
+			t2.selectAll(".foreignobj").call(foreign); 
+
+			t1.remove().each("end", function() {
+				svg.style("shape-rendering", "crispEdges");
+				transitioning = false;
+			});
+
+		}
+
+		return g;
+	}
+
+	function text(text) {
+		text.attr("x", function(d) { return x(d.x) + 6; })
+		.attr("y", function(d) { return y(d.y) + 6; });
+	}
+
+	function rect(rect) {
+		rect.attr("x", function(d) { return x(d.x); })
+		.attr("y", function(d) { return y(d.y); })
+		.attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
+		.attr("height", function(d) { return y(d.y + d.dy) - y(d.y); })
+		.style("background", function(d) { return d.parent ? color(d.name) : null; });
+	}
+
+	function foreign(foreign){ /* added */
+		foreign.attr("x", function(d) { return x(d.x); })
+		.attr("y", function(d) { return y(d.y); })
+		.attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
+		.attr("height", function(d) { return y(d.y + d.dy) - y(d.y); });
+	}
+
+	function name(d) {
+		return d.parent ? name(d.parent) + "." + d.name : d.name;
+	}
+
+	function loadData(root) {
+		initialize(root);
+		accumulate(root);
+		layout(root);
+		display(root);
+	}
+
+</script>
+<p style="text-align:center;">
+	This first scene addresses the proliferation of different fuel types in a drill-down format. <br> 
+	The user is presented with a treemap that depicts the market share of each of the most common fuel types. <br> 
+	From that level, the user can select the fuel type they would like to learn more about to see the manufacturers of vehicles of the selected fuel type by market share. <br>
+	Upon selecting a manufacturer tile, the user will see the classes of vehicle that make up the manufacturer's fuel types. <br>
+	Selecting a vehicle class will present the user with a number of years from which to select to drill down further. <br>
+	Selecting a year presents the viewer with the specific model under test meeting all the previous criteria. <br>
+	Selecting a model presents the viewer with the available transmission types. <br>
+	Finally, the user is presented with the fuel economy data in Miles per Gallon. <br>
+</p>
+<p style="text-align:center;">
+	The scene makes effective use of highlighting the segment in which the mouse is placed. This acts as an <font font size="+2"> annotation</font> mechanism <br>
+	in as much as it allows the user to focus on the fuel type of interest. The  <font size="+2">parameter</font> in this scene is fuel type. <br>
+	Clicking on a block <font size="+2">triggers</font> the scene to change and present the data the next level down. <br>
+	<font size="+2">Transitions</font> are also used when the user clicks into the data to smooth the presentation of the next layer down. <br>
+	The bar at the top of the chart allows the viewer to keep track of where they are in the tree and navigate back to the next higher level. 
+
+</p>
