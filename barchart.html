@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style> 
+
+body { font: 12px Arial;}
+
+.bar rect {
+  fill: green;
+}
+
+.bar text.value {
+  fill: white;
+}
+
+.axis {
+  shape-rendering: crispEdges;
+}
+
+.axis path {
+  fill: none;
+}
+
+.x.axis line {
+  stroke: #fff;
+  stroke-opacity: .8;
+}
+
+.y.axis path {
+  stroke: black;
+}
+
+div.tooltip { 
+    position: absolute;     
+    text-align: center;     
+    width: 150px;          
+    height: 150px;         
+    padding: 2px;       
+    font: 12px sans-serif;    
+    background: lightsteelblue; 
+    border: 0px;    
+    border-radius: 8px;     
+    pointer-events: none;     
+}
+
+</style>
+
+
+<body style="background-color:powderblue;">
+  <p style="text-align:center;">This chart displays the average fuel economy by manufacturer. <br>
+    The colors act as <font size="+2"> annotations</font> which indicate the manufacturers relative performance against its peers. <br>
+    Green idicates a positive metric, orange is neutral, and red is 
+    reserved for the worst performing maufacturers. <br>
+    Placing the mouse over any of the bars <font size="+2">triggers</font> a tooltip which provides the user with even more data about the manufacturer such as <br>
+    Avg CO2 emissions, Avg Fuel Economy, and Avg engine displacement. This scene is passive, and <font size="+2">parameters</font> are controlled only by the buttons at the bottom. 
+  </p>
+<script src="http://d3js.org/d3.v3.js"></script>
+
+<script>
+
+var m = [50, 5, 5, 170],
+    w = 1000  - m[1] - m[3],
+    h = 1200 - m[0] - m[2];
+
+var format = d3.format(",.0f");
+
+var x = d3.scale.linear().range([0, w]),
+    y = d3.scale.ordinal().rangeRoundBands([0, h], .1);
+
+var xAxis = d3.svg.axis().scale(x).orient("top").tickSize(-h),
+    yAxis = d3.svg.axis().scale(y).orient("left").tickSize(0);
+
+var div = d3.select("body").append("div") 
+    .attr("class", "tooltip")       
+    .style("opacity", 0);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", w + m[1] + m[3])
+    .attr("height", h + m[0] + m[2])
+  .append("g")
+    .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+
+d3.csv("vehicles.csv", function(error, data) {
+  if (error) throw error;
+
+  // Parse numbers, and sort by value.
+  data.forEach(function(d) { d.manfAvg = +d.manfAvg; });
+  data.sort(function(a, b) { return b.manfAvg - a.manfAvg; });
+
+  // Set the scale domain.
+  x.domain([0, d3.max(data, function(d) { return d.manfAvg; })]);
+  y.domain(data.map(function(d) { return d.manf; }));
+
+  var bar = svg.selectAll("g.bar")
+      .data(data)
+    .enter().append("g")
+      .attr("class", "bar")
+      .attr("transform", function(d) { return "translate(0," + y(d.manf) + ")"; });
+
+  bar.append("rect")
+      .attr("width", function(d) { return x(d.manfAvg); })
+      .attr("height", y.rangeBand())
+      .attr("fill", function(d) {
+    if (d.manfAvg > 22) {
+      return "green";
+    } else if (d.manfAvg > 15) {
+      return "orange";
+    }
+    return "red";
+    
+  });
+
+ bar.on("mouseover", function(d) {   
+            div.transition()    
+                .duration(200)    
+                .style("opacity", .9);    
+            div .html(d.manf + "<br/>"  + d.manfAvg + " Average MPG"  +  "<br/>" + d.manfco2 + " Average CO2" +  "<br/>" + d.manfdisp + " Avg Displacement" )  
+                .style("left", (d3.event.pageX) + "px")   
+                .style("top", (d3.event.pageY - 28) + "px");  
+            })          
+        .on("mouseout", function(d) {   
+            div.transition()    
+                .duration(500)    
+                .style("opacity", 0); 
+        });
+
+  bar.append("text")
+      .attr("class", "value")
+      .attr("x", function(d) { return x(d.manfAvg); })
+      .attr("y", y.rangeBand() / 2)
+      .attr("dx", -3)
+      .attr("dy", ".35em")
+      .attr("text-anchor", "end")
+      .text(function(d) { return format(d.manfAvg); });
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+});
+
+</script>
+<p style="text-align:center;">
+      
+      <a href="index.html"><button>Previous Visualization</button></a>
+      <a href="areachart.html"><button>Next Visualization</button></a>
+    </p>
